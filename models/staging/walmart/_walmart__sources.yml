@@ -1,0 +1,56 @@
+version: 2
+
+sources:
+  - name: walmart_raw
+    description: >
+      Landing tables loaded 1:1 from the three Walmart CSVs (S3 stage -> COPY INTO) by the
+      walmart_pipeline repo. dbt only reads from these; it never writes to RAW.
+    database: "{{ var('raw_database') }}"
+    schema: "{{ var('raw_schema') }}"
+    tables:
+      - name: department
+        identifier: DEPARTMENT
+        description: department.csv. Weekly sales per store, department and week (421,570 rows).
+        columns:
+          - name: store
+            data_tests: [not_null]
+          - name: dept
+            data_tests: [not_null]
+          - name: date
+            description: Week-ending Friday.
+            data_tests: [not_null]
+          - name: weekly_sales
+            description: Can be negative when returns exceed sales for the week.
+          - name: isholiday
+        data_tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [store, dept, date]
+
+      - name: stores
+        identifier: STORES
+        description: stores.csv. One row per store with its type and square footage (45 rows).
+        columns:
+          - name: store
+            data_tests: [unique, not_null]
+          - name: type
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['A', 'B', 'C']
+          - name: size
+
+      - name: fact
+        identifier: FACT
+        description: >
+          fact.csv. Store-level weekly conditions: temperature, fuel price, promotional
+          markdowns, CPI and unemployment (8,190 rows). Covers more weeks than department.csv.
+        columns:
+          - name: store
+            data_tests: [not_null]
+          - name: date
+            data_tests: [not_null]
+        data_tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [store, date]

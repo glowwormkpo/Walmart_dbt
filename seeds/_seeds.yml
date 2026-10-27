@@ -1,0 +1,20 @@
+version: 2
+
+seeds:
+  - name: walmart_holiday_calendar
+    description: >
+      The four holiday weeks Walmart flags in the dataset (Super Bowl, Labor Day,
+      Thanksgiving, Christmas), keyed by the week-ending Friday. Used to name holidays
+      in dim_date and to audit the source IsHoliday flag.
+    columns:
+      - name: holiday_week_date
+        description: Week-ending Friday of the holiday week.
+        data_tests:
+          - unique
+          - not_null
+      - name: holiday_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Super Bowl', 'Labor Day', 'Thanksgiving', 'Christmas']

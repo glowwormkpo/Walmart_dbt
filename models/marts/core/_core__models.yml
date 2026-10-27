@@ -1,0 +1,101 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: Week-level date dimension covering every week in either source, with named holidays.
+    columns:
+      - name: date_id
+        description: Integer YYYYMMDD key (primary key).
+        data_tests: [unique, not_null]
+      - name: week_date
+        description: Week-ending Friday.
+        data_tests: [unique, not_null]
+      - name: is_holiday_week
+        data_tests: [not_null]
+      - name: holiday_name
+        description: Super Bowl, Labor Day, Thanksgiving or Christmas; null for regular weeks.
+
+  - name: dim_store
+    description: >
+      SCD Type 2 store dimension built from snap_walmart__stores. One row per store version.
+      Join facts on store_id plus week_date between valid_from and valid_to to get the
+      attributes in effect that week, or filter is_current for today's attributes.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, version_number]
+    columns:
+      - name: store_sk
+        description: Surrogate key for one store version (primary key).
+        data_tests: [unique, not_null]
+      - name: store_id
+        data_tests: [not_null]
+      - name: store_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['A', 'B', 'C']
+      - name: store_size_sqft
+      - name: version_number
+        description: 1 for the original version, incrementing with each change.
+      - name: valid_from
+        description: Version start. The first version is backdated to 1900-01-01 so historical sales match it.
+      - name: valid_to
+        description: Version end. 9999-12-31 for the current version.
+      - name: is_current
+        data_tests: [not_null]
+
+  - name: fct_weekly_department_sales
+    description: >
+      Weekly net sales at the store / department / week grain (department.csv grain).
+      Built incrementally; row count and total sales reconcile exactly to the source.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, dept_id, date_id]
+    columns:
+      - name: store_sk
+        description: The store version in effect that week.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_store')
+                field: store_sk
+      - name: date_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_id
+      - name: weekly_sales
+        description: Net weekly sales in USD (can be negative).
+        data_tests: [not_null]
+
+  - name: fct_weekly_store_conditions
+    description: >
+      Store-week weather, fuel price, CPI, unemployment and promotional markdowns
+      (fact.csv grain). Kept separate from department sales so store-level values are
+      never repeated per department.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, date_id]
+    columns:
+      - name: store_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_store')
+                field: store_sk
+      - name: date_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_id
+      - name: total_markdown
+        description: Sum of markdowns 1-5 for the store that week, nulls treated as zero.

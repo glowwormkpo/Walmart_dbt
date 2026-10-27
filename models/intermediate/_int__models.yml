@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: int_calendar_weeks
+    description: Every week-ending date in either source, with one reconciled holiday flag.
+    columns:
+      - name: week_date
+        data_tests: [unique, not_null]
+
+  - name: int_store_weekly_sales
+    description: >
+      Department sales rolled up to store-week, joined to that store-week's conditions.
+      This is the safe grain for any metric that mixes sales with store-level values
+      (markdowns, CPI, fuel, temperature). Summing store-level values from department rows
+      would repeat each value once per department.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, week_date]
+    columns:
+      - name: weekly_sales
+        description: Total net sales for the store that week, all departments.
+      - name: departments_reporting
+        description: Number of departments with a sales row that week.

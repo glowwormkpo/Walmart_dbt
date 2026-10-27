@@ -1,0 +1,58 @@
+name: walmart_dbt
+version: "1.0.0"
+config-version: 2
+
+profile: walmart_dbt
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+vars:
+  # Where the S3 -> Snowflake loader (walmart_pipeline repo) landed the raw CSVs.
+  raw_database: WALMART_E2E
+  raw_schema: RAW
+  # Incremental fact loads re-process this many trailing weeks so late corrections
+  # to recent weeks are picked up. The merge on the grain key keeps it idempotent.
+  incremental_lookback_weeks: 4
+
+models:
+  walmart_dbt:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +materialized: table
+      core:
+        +schema: core
+      reporting:
+        +schema: reporting
+
+snapshots:
+  walmart_dbt:
+    +schema: snapshots
+
+seeds:
+  walmart_dbt:
+    +schema: reference
+    walmart_holiday_calendar:
+      +column_types:
+        holiday_week_date: date
+        holiday_name: varchar(30)
+
+data_tests:
+  walmart_dbt:
+    +store_failures: false

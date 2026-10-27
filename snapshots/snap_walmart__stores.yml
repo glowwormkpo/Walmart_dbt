@@ -1,0 +1,22 @@
+version: 2
+
+snapshots:
+  - name: snap_walmart__stores
+    description: >
+      SCD Type 2 history of store attributes. Each `dbt snapshot` run compares
+      store_type and store_size_sqft to the current version; when either changes, the
+      old row is closed out (dbt_valid_to set) and a new current row is inserted.
+      Replaces the hand-written expire-then-insert MERGE in walmart_pipeline/05_dimensional_model.sql.
+    relation: ref('stg_walmart__stores')
+    config:
+      unique_key: store_id
+      strategy: check
+      check_cols: [store_type, store_size_sqft]
+      dbt_valid_to_current: "cast('9999-12-31' as timestamp)"
+      hard_deletes: invalidate
+    columns:
+      - name: store_id
+        data_tests: [not_null]
+      - name: dbt_scd_id
+        description: Unique ID for each store version. Becomes store_sk in dim_store.
+        data_tests: [unique, not_null]

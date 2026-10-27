@@ -1,0 +1,79 @@
+version: 2
+
+models:
+  - name: stg_walmart__department_sales
+    description: Cleaned weekly sales at the store / department / week grain. One row per department.csv row.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, dept_id, week_date]
+    columns:
+      - name: store_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_walmart__stores')
+                field: store_id
+      - name: dept_id
+        data_tests: [not_null]
+      - name: week_date
+        description: Week-ending Friday.
+        data_tests: [not_null]
+      - name: date_id
+        description: Integer YYYYMMDD key for week_date.
+        data_tests: [not_null]
+      - name: weekly_sales
+        description: Net weekly sales in USD. Negative values are real (returns) and are kept.
+        data_tests: [not_null]
+      - name: is_holiday_week
+
+  - name: stg_walmart__stores
+    description: One row per store with its type (A/B/C) and size in square feet.
+    columns:
+      - name: store_id
+        data_tests: [unique, not_null]
+      - name: store_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['A', 'B', 'C']
+      - name: store_size_sqft
+        data_tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 1
+
+  - name: stg_walmart__store_conditions
+    description: Weekly store-level conditions (weather, fuel, markdowns, CPI, unemployment).
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, week_date]
+    columns:
+      - name: store_id
+        data_tests: [not_null]
+      - name: week_date
+        data_tests: [not_null]
+      - name: temperature_f
+        description: Average regional temperature, degrees Fahrenheit.
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: -40
+                max_value: 130
+      - name: fuel_price
+        description: Regional fuel price, USD per gallon.
+      - name: unemployment_rate
+        description: Regional unemployment rate, percent.
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: total_markdown
+        description: Sum of the five promotional markdown columns, nulls treated as zero.
+      - name: has_markdown_data
+        description: False when all five markdown columns are null (weeks before Nov 2011).

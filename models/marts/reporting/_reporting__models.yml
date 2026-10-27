@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: rpt_department_sales
+    description: Dashboard report 1. Total and average sales per department, with share of total and rank.
+    columns:
+      - name: dept_id
+        data_tests: [unique, not_null]
+
+  - name: rpt_monthly_sales_by_store_type
+    description: Dashboard reports 2, 5 and 9. Monthly sales by store type, with each type's share of the month.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [month_start_date, store_type]
+
+  - name: rpt_store_performance
+    description: >
+      Dashboard reports 6 and 7. One row per store: total and average weekly sales,
+      sales per square foot, and holiday-week lift over regular weeks.
+    columns:
+      - name: store_id
+        data_tests: [unique, not_null]
+      - name: holiday_lift_pct
+        description: Percent difference between average holiday-week and average regular-week store sales.
+
+  - name: rpt_weekly_sales_and_conditions
+    description: >
+      Dashboard reports 3, 8 and 10. Weekly total sales next to average CPI, temperature,
+      fuel price and unemployment, averaged across stores at the store-week grain.
+    columns:
+      - name: date_id
+        data_tests: [unique, not_null]
+
+  - name: rpt_markdown_by_store_year
+    description: >
+      Dashboard report 4. Promotional markdowns per store and year, counted once per
+      store-week, plus markdown as a percent of sales in weeks that have markdown data.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_id, calendar_year]

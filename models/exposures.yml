@@ -1,0 +1,20 @@
+version: 2
+
+exposures:
+  - name: walmart_sales_dashboard
+    label: Walmart Sales Dashboard (Streamlit in Snowflake)
+    type: dashboard
+    maturity: medium
+    url: https://github.com/glowwormkpo/walmart_pipeline/tree/main/streamlit
+    description: >
+      The 10-report Streamlit dashboard from the walmart_pipeline repo. Each report maps
+      to one reporting model, so the dashboard can read pre-aggregated tables instead of
+      aggregating the 421K-row fact table on every page load.
+    depends_on:
+      - ref('rpt_department_sales')
+      - ref('rpt_monthly_sales_by_store_type')
+      - ref('rpt_store_performance')
+      - ref('rpt_weekly_sales_and_conditions')
+      - ref('rpt_markdown_by_store_year')
+    owner:
+      name: Jerry Wyatt

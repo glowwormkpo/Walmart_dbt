@@ -1,0 +1,35 @@
+# Copy this file to ~/.dbt/profiles.yml (or merge it into the one you already have).
+# Credentials come from environment variables so nothing secret is committed to Git.
+#
+#   export SNOWFLAKE_ACCOUNT=xy12345.us-east-1        # account identifier from your Snowflake URL
+#   export SNOWFLAKE_USER=JWYATT
+#   export SNOWFLAKE_PASSWORD='...'                   # or use the key-pair block below
+#
+walmart_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      # Key-pair auth instead of a password (comment out `password` above):
+      # private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      # private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role: SYSADMIN
+      warehouse: WALMART_WH
+      database: WALMART_E2E
+      schema: DBT_DEV          # dev builds land in DBT_DEV_STAGING, DBT_DEV_CORE, ...
+      threads: 4
+      client_session_keep_alive: false
+
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: SYSADMIN
+      warehouse: WALMART_WH
+      database: WALMART_E2E
+      schema: ANALYTICS        # prod builds land in clean STAGING, CORE, REPORTING schemas
+      threads: 4
